@@ -1,0 +1,35 @@
+# =========================================================
+# docker-compose.yml
+# Uso local o en servidor de pruebas:
+#   docker compose up -d --build
+#   → http://localhost:8080
+#
+# En la versión completa de PRISMA este archivo orquestará
+# también: backend (Spring Boot), servicio IA (FastAPI+Ollama),
+# PostgreSQL, MinIO y Grafana. Aquí solo el frontend estático.
+# =========================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: prisma-landing:${TAG:-latest}
+    container_name: prisma-landing
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "com.prisma.stack=frontend"
+      - "com.prisma.env=${APP_ENV:-dev}"

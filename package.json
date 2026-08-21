@@ -1,0 +1,32 @@
+{
+  "name": "prisma-landing",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PRISMA - Plataforma de Revisión Integral de Seguridad y Marcos de Auditorías. Landing pública del proyecto.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173 --host",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --ext .js,.vue --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{js,vue,css,html}\""
+  },
+  "dependencies": {
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/test-utils": "^2.4.5",
+    "autoprefixer": "^10.4.19",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.24.0",
+    "jsdom": "^24.0.0",
+    "postcss": "^8.4.38",
+    "prettier": "^3.2.5",
+    "tailwindcss": "^3.4.3",
+    "vite": "^5.2.8",
+    "vitest": "^1.5.0"
+  }
+}

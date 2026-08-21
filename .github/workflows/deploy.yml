@@ -1,0 +1,76 @@
+# =========================================================
+# CD — Despliegue Continuo a GitHub Pages
+# Publica automáticamente la landing tras cada merge a main.
+# Requiere activar "Pages" del repo en "GitHub Actions".
+# =========================================================
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Permite lanzarlo a mano desde la pestaña Actions
+  workflow_dispatch:
+
+# Permisos mínimos que exige el despliegue a Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Evita despliegues concurrentes (Pages no lo soporta bien)
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build para Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+
+      - name: Tests unitarios (gate previo al deploy)
+        run: npm run test:unit
+
+      - name: Build con base path del repo
+        # Vite necesita la base "/{repo}/" para que las rutas absolutas
+        # generadas apunten correctamente bajo GitHub Pages.
+        run: npm run build
+        env:
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+
+      - name: Copiar 404.html (SPA fallback en Pages)
+        # GitHub Pages no soporta rewrites, pero un 404.html
+        # con el mismo contenido que index.html emula el SPA fallback.
+        run: cp dist/index.html dist/404.html
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir artefacto de Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Publicar en Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Desplegar
+        id: deployment
+        uses: actions/deploy-pages@v4

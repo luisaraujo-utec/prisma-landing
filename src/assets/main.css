@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(59, 130, 246, 0.18), transparent 60%),
+      radial-gradient(900px 500px at 100% 10%, rgba(34, 211, 238, 0.12), transparent 60%),
+      #0b1220;
+    min-height: 100vh;
+  }
+  ::selection {
+    background: rgba(59, 130, 246, 0.35);
+    color: #fff;
+  }
+}
+
+@layer components {
+  .container-app {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-lg bg-prisma-primary px-5 py-2.5 text-sm font-semibold text-white shadow-glow-primary transition hover:bg-prisma-primaryDark focus:outline-none focus:ring-2 focus:ring-prisma-primary focus:ring-offset-2 focus:ring-offset-prisma-bg;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-lg border border-prisma-border bg-prisma-panel/60 px-5 py-2.5 text-sm font-semibold text-prisma-text transition hover:border-prisma-accent hover:text-prisma-accent;
+  }
+  .card {
+    @apply rounded-xl border border-prisma-border bg-prisma-panel/70 p-6 backdrop-blur transition;
+  }
+  .card-hover:hover {
+    @apply border-prisma-primary/60 shadow-glow-primary;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-prisma-border bg-prisma-panel/70 px-3 py-1 text-xs font-medium text-prisma-muted;
+  }
+  .badge-fn {
+    @apply inline-flex items-center rounded-md bg-prisma-primary/15 px-2 py-0.5 text-[11px] font-semibold text-prisma-accent;
+  }
+  .section-title {
+    @apply mb-2 text-3xl font-bold tracking-tight text-white sm:text-4xl;
+  }
+  .section-lead {
+    @apply mx-auto max-w-3xl text-base text-prisma-muted sm:text-lg;
+  }
+}

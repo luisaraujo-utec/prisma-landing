@@ -1,0 +1,136 @@
+# ============================================================
+# PRISMA Landing · Docker publish to GHCR
+# ============================================================
+# Publica la imagen en GitHub Container Registry (ghcr.io).
+# Se dispara al mergear a main, al crear un tag vX.Y.Z
+# o manualmente desde la UI de Actions.
+#
+# La imagen queda en:
+#   ghcr.io/<owner>/<repo>:<tag>
+# con múltiples etiquetas (latest, main, sha-abc123, v1.2.3, etc.)
+# ============================================================
+
+name: Docker · Publish to GHCR
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']       # v1.0.0, v2.3.1, etc.
+  workflow_dispatch:       # botón "Run workflow" en la UI
+
+# No cancelar publicaciones a mitad de camino
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+# GITHUB_TOKEN necesita write en packages para publicar en ghcr.io
+permissions:
+  contents: read
+  packages: write
+  # Habilita SBOM y attestations firmadas
+  id-token: write
+  attestations: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ghcr.io exige nombres en minúsculas.
+      # GITHUB_REPOSITORY viene como "usuario/repo"; puede tener mayúsculas.
+      # ${VAR,,} en bash lo baja a minúsculas.
+      - name: Normalizar nombre de imagen a minúsculas
+        id: image
+        run: echo "name=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Login a GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extraer metadatos y etiquetas
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
+          tags: |
+            # Rama (main → tag "main")
+            type=ref,event=branch
+            # Pull requests (no llegan acá pero por si se activa)
+            type=ref,event=pr
+            # Tags semver: v1.2.3 → 1.2.3, 1.2, 1
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # Commit SHA corto (siempre)
+            type=sha,prefix=sha-,format=short
+            # "latest" solo en la rama por defecto
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=PRISMA Landing
+            org.opencontainers.image.description=Landing del proyecto PRISMA · Análisis DevOps
+            org.opencontainers.image.vendor=Equipo PRISMA
+            org.opencontainers.image.licenses=MIT
+
+      - name: Set up QEMU (para builds multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          # Por defecto solo amd64 (más rápido).
+          # Para publicar también arm64 (Raspberry Pi, Mac M1/M2/M3, servers ARM):
+          # platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Generar attestation de la imagen (firma criptográfica)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Resumen de la publicación
+        run: |
+          {
+            echo "## 📦 Imagen publicada en GHCR"
+            echo ""
+            echo "**Registry:** \`${{ env.REGISTRY }}/${{ steps.image.outputs.name }}\`"
+            echo ""
+            echo "**Digest:** \`${{ steps.build.outputs.digest }}\`"
+            echo ""
+            echo "**Etiquetas publicadas:**"
+            echo ""
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+            echo ""
+            echo "**Para descargar y correr localmente:**"
+            echo ""
+            echo '```bash'
+            echo "docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest"
+            echo "docker run -d --name prisma -p 8080:80 ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest"
+            echo "# → abrir http://localhost:8080"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
