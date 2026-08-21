@@ -41,7 +41,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # ghcr.io exige nombres en minúsculas.
       # GITHUB_REPOSITORY viene como "usuario/repo"; puede tener mayúsculas.
