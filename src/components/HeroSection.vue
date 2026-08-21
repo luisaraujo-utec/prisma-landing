@@ -27,7 +27,7 @@ const kpis = [
         <p class="mx-auto mt-6 max-w-2xl text-lg text-prisma-muted">
           <strong class="text-white">PRISMA</strong> es una plataforma web que automatiza la
           aplicación del <strong class="text-white">Marco de Ciberseguridad 5.0 de AGESIC</strong>,
-          reemplazando planillas dispersas por un entorno seguro, multitenant y auditable.
+          reemplazando planillas dispersas por un entorno seguro, multitenant y auditable desarrollado por ITDICE.
         </p>
         <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
